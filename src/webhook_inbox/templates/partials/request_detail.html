@@ -1,0 +1,52 @@
+<div class="stack">
+  <div>
+    <span class="pill">{{ item.method }}</span>
+    <code>{{ item.path }}{% if item.query_string %}?{{ item.query_string }}{% endif %}</code>
+  </div>
+  <p class="muted mono">{{ item.received_at.isoformat() }} · {{ item.source_ip or "unknown IP" }} · #{{ item.id }}</p>
+
+  <div>
+    <h3>Headers{% if item.headers_truncated %} <span class="error">(truncated)</span>{% endif %}</h3>
+    <pre>{% for name, value in item.headers %}{{ name }}: {{ value }}
+{% endfor %}</pre>
+  </div>
+
+  <div>
+    <h3>Body</h3>
+    <pre>{{ body_text }}</pre>
+  </div>
+
+  <div>
+    <h3>Replay</h3>
+    <p class="muted">Targets are checked for SSRF (private IPs blocked unless configured).</p>
+    <form hx-post="/ui/{{ token }}/requests/{{ item.id }}/replay"
+          hx-target="#replay-result"
+          hx-swap="innerHTML"
+          class="stack">
+      <div>
+        <label for="target_url">Target URL</label>
+        <input id="target_url" name="target_url" required placeholder="https://example.com/hooks">
+      </div>
+      <button type="submit">Replay</button>
+    </form>
+    <div id="replay-result" style="margin-top:0.75rem"></div>
+  </div>
+
+  {% if replays %}
+  <div>
+    <h3>Previous replays</h3>
+    {% for replay in replays %}
+    <div class="panel" style="margin:0.5rem 0;padding:0.75rem">
+      <div class="mono">{{ replay.finished_at.isoformat() }} · {{ replay.duration_ms }} ms</div>
+      <div class="mono">{{ replay.target_url }}</div>
+      {% if replay.error %}
+      <div class="error">{{ replay.error }}</div>
+      {% else %}
+      <div class="ok">HTTP {{ replay.status_code }}</div>
+      <pre>{{ replay.response_body_preview }}</pre>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>

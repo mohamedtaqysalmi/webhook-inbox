@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}webhook-inbox{% endblock %}
+{% block content %}
+<section class="panel">
+  <h1>Catch webhooks locally</h1>
+  <p class="muted">Create an endpoint URL, inspect stored requests, and replay them to a safe target.</p>
+  <form method="post" action="/ui/endpoints" style="margin-top:1rem">
+    <button type="submit">Create endpoint</button>
+  </form>
+</section>
+<section class="panel">
+  <h2>JSON API</h2>
+  <pre>POST /api/endpoints
+POST /h/&lt;token&gt;
+GET  /api/endpoints/&lt;token&gt;/requests
+POST /api/endpoints/&lt;token&gt;/requests/&lt;id&gt;/replay</pre>
+</section>
+{% endblock %}

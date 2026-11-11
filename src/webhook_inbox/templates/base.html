@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}webhook-inbox{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.4/dist/htmx.min.js"></script>
+  <style>
+    :root {
+      --bg: #f4f7f5;
+      --ink: #14201b;
+      --muted: #4d5f56;
+      --accent: #0f766e;
+      --accent-ink: #083b36;
+      --line: #c9d5cf;
+      --card: #ffffff;
+      --warn: #9a3412;
+      --ok: #166534;
+      --mono: "IBM Plex Mono", "Consolas", "Courier New", monospace;
+      --sans: "Source Sans 3", "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: var(--sans);
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 10% 0%, #d9efe8 0%, transparent 42%),
+        linear-gradient(180deg, #eef5f1 0%, var(--bg) 40%);
+      min-height: 100vh;
+    }
+    a { color: var(--accent-ink); }
+    header, main { max-width: 960px; margin: 0 auto; padding: 1.25rem 1rem; }
+    header {
+      display: flex; align-items: baseline; justify-content: space-between; gap: 1rem;
+      border-bottom: 1px solid var(--line);
+    }
+    .brand { font-family: var(--mono); font-weight: 600; letter-spacing: -0.02em; font-size: 1.15rem; }
+    .muted { color: var(--muted); }
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 1rem 1.1rem;
+      margin: 1rem 0;
+    }
+    h1, h2 { margin: 0 0 0.5rem; letter-spacing: -0.02em; }
+    button, .btn {
+      appearance: none; border: 0; border-radius: 8px; padding: 0.55rem 0.9rem;
+      background: var(--accent); color: #fff; font: inherit; font-weight: 600; cursor: pointer;
+      text-decoration: none; display: inline-block;
+    }
+    button.secondary { background: #e7eeea; color: var(--ink); }
+    input, select {
+      width: 100%; padding: 0.5rem 0.65rem; border: 1px solid var(--line);
+      border-radius: 8px; font: inherit; background: #fff;
+    }
+    label { display: block; font-size: 0.9rem; margin-bottom: 0.25rem; color: var(--muted); }
+    .row { display: grid; gap: 0.75rem; }
+    @media (min-width: 720px) {
+      .row.cols-3 { grid-template-columns: 1fr 1fr 1fr auto; align-items: end; }
+      .layout { display: grid; grid-template-columns: 1.1fr 1fr; gap: 1rem; }
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+    th, td { text-align: left; padding: 0.55rem 0.35rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+    th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    tr.active td { background: #e8f5f1; }
+    code, pre, .mono { font-family: var(--mono); font-size: 0.85rem; }
+    pre {
+      white-space: pre-wrap; word-break: break-word; background: #0f1a16; color: #d7ebe3;
+      padding: 0.85rem; border-radius: 8px; overflow: auto;
+    }
+    .pill {
+      display: inline-block; padding: 0.1rem 0.45rem; border-radius: 999px;
+      background: #e7eeea; font-family: var(--mono); font-size: 0.75rem;
+    }
+    .error { color: var(--warn); }
+    .ok { color: var(--ok); }
+    .stack { display: grid; gap: 0.75rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">webhook-inbox</div>
+    <div class="muted">self-hosted webhook catcher</div>
+  </header>
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

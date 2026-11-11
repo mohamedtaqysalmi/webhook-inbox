@@ -5,7 +5,7 @@ import sqlite3
 from collections.abc import Callable, Iterator, Sequence
 from contextlib import closing, contextmanager
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 Clock = Callable[[], datetime]
 
@@ -32,6 +32,23 @@ CREATE TABLE IF NOT EXISTS requests (
 
 CREATE INDEX IF NOT EXISTS idx_requests_endpoint_time
     ON requests(endpoint_token, received_at);
+
+CREATE TABLE IF NOT EXISTS replays (
+    id                     INTEGER PRIMARY KEY AUTOINCREMENT,
+    endpoint_token         TEXT NOT NULL REFERENCES endpoints(token),
+    request_id             INTEGER NOT NULL REFERENCES requests(id) ON DELETE CASCADE,
+    target_url             TEXT NOT NULL,
+    started_at             TEXT NOT NULL,
+    finished_at            TEXT NOT NULL,
+    status_code            INTEGER,
+    error                  TEXT,
+    response_headers       TEXT NOT NULL,
+    response_body_preview  TEXT NOT NULL,
+    duration_ms            INTEGER NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_replays_request
+    ON replays(endpoint_token, request_id, id);
 """
 
 
@@ -81,6 +98,21 @@ class StoredRequest:
     headers_truncated: bool
     body: bytes
     source_ip: str | None
+
+
+@dataclass(frozen=True)
+class StoredReplay:
+    id: int
+    endpoint_token: str
+    request_id: int
+    target_url: str
+    started_at: datetime
+    finished_at: datetime
+    status_code: int | None
+    error: str | None
+    response_headers: list[tuple[str, str]]
+    response_body_preview: str
+    duration_ms: int
 
 
 def _escape_like(text: str) -> str:
@@ -209,6 +241,78 @@ class Storage:
             rows = conn.execute(sql, params).fetchall()
         return [_row_to_request(row) for row in rows]
 
+    def delete_requests_older_than(self, days: int) -> int:
+        """Delete stored requests (and cascaded replays) older than `days`.
+
+        `days <= 0` means retention is disabled and nothing is deleted.
+        """
+        if days <= 0:
+            return 0
+        cutoff = self._clock() - timedelta(days=days)
+        with self._connect() as conn:
+            cursor = conn.execute(
+                "DELETE FROM requests WHERE received_at < ?",
+                (format_timestamp(cutoff),),
+            )
+            return cursor.rowcount
+
+    def add_replay(
+        self,
+        token: str,
+        request_id: int,
+        *,
+        target_url: str,
+        started_at: datetime,
+        finished_at: datetime,
+        status_code: int | None,
+        error: str | None,
+        response_headers: Sequence[tuple[str, str]],
+        response_body_preview: str,
+        duration_ms: int,
+    ) -> StoredReplay:
+        with self._connect() as conn:
+            cursor = conn.execute(
+                "INSERT INTO replays (endpoint_token, request_id, target_url, started_at,"
+                " finished_at, status_code, error, response_headers, response_body_preview,"
+                " duration_ms) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (
+                    token,
+                    request_id,
+                    target_url,
+                    format_timestamp(started_at),
+                    format_timestamp(finished_at),
+                    status_code,
+                    error,
+                    json.dumps(list(response_headers)),
+                    response_body_preview,
+                    duration_ms,
+                ),
+            )
+            replay_id = cursor.lastrowid
+        assert replay_id is not None
+        return StoredReplay(
+            id=replay_id,
+            endpoint_token=token,
+            request_id=request_id,
+            target_url=target_url,
+            started_at=started_at.astimezone(UTC),
+            finished_at=finished_at.astimezone(UTC),
+            status_code=status_code,
+            error=error,
+            response_headers=list(response_headers),
+            response_body_preview=response_body_preview,
+            duration_ms=duration_ms,
+        )
+
+    def list_replays(self, token: str, request_id: int) -> list[StoredReplay]:
+        with self._connect() as conn:
+            rows = conn.execute(
+                "SELECT * FROM replays WHERE endpoint_token = ? AND request_id = ?"
+                " ORDER BY id DESC",
+                (token, request_id),
+            ).fetchall()
+        return [_row_to_replay(row) for row in rows]
+
 
 def _row_to_request(row: sqlite3.Row) -> StoredRequest:
     return StoredRequest(
@@ -222,4 +326,20 @@ def _row_to_request(row: sqlite3.Row) -> StoredRequest:
         headers_truncated=bool(row["headers_truncated"]),
         body=bytes(row["body"]),
         source_ip=row["source_ip"],
+    )
+
+
+def _row_to_replay(row: sqlite3.Row) -> StoredReplay:
+    return StoredReplay(
+        id=row["id"],
+        endpoint_token=row["endpoint_token"],
+        request_id=row["request_id"],
+        target_url=row["target_url"],
+        started_at=parse_timestamp(row["started_at"]),
+        finished_at=parse_timestamp(row["finished_at"]),
+        status_code=row["status_code"],
+        error=row["error"],
+        response_headers=[(name, value) for name, value in json.loads(row["response_headers"])],
+        response_body_preview=row["response_body_preview"],
+        duration_ms=row["duration_ms"],
     )

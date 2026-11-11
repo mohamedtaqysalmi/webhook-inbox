@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>webhook-inbox — catch, inspect, replay</title>
+  <meta name="description" content="Self-hosted webhook inbox: store requests, verify HMAC signatures, replay with SSRF protection.">
+  <meta property="og:title" content="webhook-inbox">
+  <meta property="og:description" content="Self-hosted inbox to receive, inspect and replay webhooks.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://mohamedtaqysalmi.github.io/webhook-inbox/">
+  <meta name="twitter:card" content="summary">
+  <link rel="canonical" href="https://mohamedtaqysalmi.github.io/webhook-inbox/">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Newsreader:opsz,wght@6..72,500;6..72,700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="top">
+    <div class="wrap top-inner">
+      <a class="mark" href="./" aria-label="webhook-inbox home">
+        <span class="mark-box" aria-hidden="true"></span>
+        <span>webhook-inbox</span>
+      </a>
+      <nav aria-label="Primary">
+        <a href="#quickstart">Quickstart</a>
+        <a href="#calculator">Signature calculator</a>
+        <a href="#decisions">Decisions</a>
+        <a href="https://github.com/mohamedtaqysalmi/webhook-inbox">GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="hero wrap">
+      <p class="eyebrow">Self-hosted · FastAPI · SQLite</p>
+      <h1>webhook-inbox</h1>
+      <p class="lede">Receive webhooks into a private inbox, inspect bodies and headers, then replay them to a checked target.</p>
+      <div class="cta">
+        <a class="button" href="https://github.com/mohamedtaqysalmi/webhook-inbox">View repository</a>
+        <a class="button ghost" href="#calculator">Open signature calculator</a>
+      </div>
+      <figure class="demo" aria-label="Product flow">
+        <div class="demo-rail">
+          <div class="demo-step"><span>1</span><strong>Create endpoint</strong><code>/h/&lt;token&gt;</code></div>
+          <div class="demo-step"><span>2</span><strong>Store request</strong><code>method · headers · body</code></div>
+          <div class="demo-step"><span>3</span><strong>Replay safely</strong><code>SSRF checks on</code></div>
+        </div>
+        <figcaption>Recorded flow is the local HTMX UI plus the JSON API. Run it with Docker Compose from the repo.</figcaption>
+      </figure>
+    </section>
+
+    <section class="wrap band" id="problem">
+      <h2>What problem it solves</h2>
+      <p>Provider dashboards often hide the raw webhook. Local tunnels expire. webhook-inbox gives you a durable, searchable catcher you control, with signature helpers and guarded replay.</p>
+    </section>
+
+    <section class="wrap" id="quickstart">
+      <h2>Quickstart</h2>
+      <div class="code-block">
+        <button type="button" class="copy" data-copy="compose">Copy</button>
+        <pre id="compose"><code>git clone https://github.com/mohamedtaqysalmi/webhook-inbox.git
+cd webhook-inbox
+docker compose up --build
+# open http://localhost:8000 and create an endpoint</code></pre>
+      </div>
+    </section>
+
+    <section class="wrap band" id="calculator">
+      <h2>Signature calculator</h2>
+      <p>Client-side only. Secrets never leave this browser tab. Matches the helpers in <code>webhook_inbox.signatures</code>.</p>
+      <form id="sig-form" class="calc" autocomplete="off">
+        <div class="grid">
+          <label>Mode
+            <select id="mode" name="mode">
+              <option value="github">GitHub (X-Hub-Signature-256)</option>
+              <option value="stripe">Stripe (t,v1)</option>
+              <option value="hmac-hex">Generic HMAC hex</option>
+              <option value="hmac-b64">Generic HMAC base64</option>
+            </select>
+          </label>
+          <label>Secret
+            <input id="secret" name="secret" type="password" placeholder="whsec_… or shared secret" required>
+          </label>
+        </div>
+        <label>Raw body
+          <textarea id="body" name="body" rows="6" placeholder='{"hello":"world"}' required></textarea>
+        </label>
+        <label id="ts-wrap" class="hidden">Stripe timestamp (unix seconds)
+          <input id="timestamp" name="timestamp" inputmode="numeric" placeholder="auto = now">
+        </label>
+        <button type="submit" class="button">Compute signature</button>
+      </form>
+      <div class="result" id="result" hidden>
+        <h3>Result</h3>
+        <pre id="output"></pre>
+        <button type="button" class="copy" data-copy="output">Copy result</button>
+      </div>
+    </section>
+
+    <section class="wrap" id="architecture">
+      <h2>How it works</h2>
+      <ol class="steps">
+        <li><strong>Capture</strong> — any method on <code>/h/{token}</code> streams the body with a hard size limit into SQLite.</li>
+        <li><strong>Inspect</strong> — JSON API or HTMX UI lists and filters requests; detail shows headers and body.</li>
+        <li><strong>Replay</strong> — outbound call after SSRF validation; result logged with status and preview.</li>
+        <li><strong>Housekeeping</strong> — retention deletes old rows; rate limit protects create/receive.</li>
+      </ol>
+    </section>
+
+    <section class="wrap band" id="decisions">
+      <h2>How I built it</h2>
+      <ul class="decisions">
+        <li><strong>stdlib SQLite over an ORM</strong> — two tables and a handful of queries; less dependency surface.</li>
+        <li><strong>HTMX instead of React</strong> — server-rendered inbox with partials; see <a href="https://github.com/mohamedtaqysalmi/webhook-inbox/blob/main/docs/adr/0001-htmx-ui.md">ADR 0001</a>.</li>
+        <li><strong>SSRF checks resolve DNS</strong> — block non-public addresses by default; private replay is opt-in for local demos.</li>
+        <li><strong>Signature helpers stay a library</strong> — verification is available without forcing a single provider auth model on every endpoint.</li>
+      </ul>
+    </section>
+
+    <section class="wrap" id="limits">
+      <h2>Honest limitations</h2>
+      <ul>
+        <li>Endpoint tokens are the only access control; put auth in front for anything shared.</li>
+        <li>Rate limits are in-process memory; they do not coordinate across multiple workers.</li>
+        <li>SSRF validation does not yet pin the resolved IP on the socket (DNS rebinding residual risk).</li>
+        <li>Postgres is not wired yet; SQLite is the supported store.</li>
+      </ul>
+    </section>
+
+    <section class="wrap band" id="status">
+      <h2>Tests and CI</h2>
+      <p>
+        <a href="https://github.com/mohamedtaqysalmi/webhook-inbox/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/mohamedtaqysalmi/webhook-inbox/actions/workflows/ci.yml/badge.svg"></a>
+        <a href="https://github.com/mohamedtaqysalmi/webhook-inbox/actions/workflows/codeql.yml"><img alt="CodeQL" src="https://github.com/mohamedtaqysalmi/webhook-inbox/actions/workflows/codeql.yml/badge.svg"></a>
+      </p>
+      <p>Coverage gate is 85%. See <code>QA.md</code> and <code>TEST_REPORT.md</code> in the repository.</p>
+    </section>
+
+    <section class="wrap" id="roadmap">
+      <h2>Roadmap</h2>
+      <p>Tracked as real GitHub issues after each release. Planned: auth for endpoint creation, Postgres option, IP pinning for replay, and a short screen-recorded demo embedded here.</p>
+    </section>
+  </main>
+
+  <footer class="wrap footer">
+    <p>Built by <a href="https://github.com/mohamedtaqysalmi">Mohamed-Taqy Salmi</a> · <a href="https://www.linkedin.com/in/mohamedtaqysalmi">LinkedIn</a></p>
+    <p><a href="https://github.com/mohamedtaqysalmi/webhook-inbox">Source</a> · MIT</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
