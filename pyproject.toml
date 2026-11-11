@@ -20,7 +20,10 @@ classifiers = [
     "Programming Language :: Python :: 3.14",
     "Typing :: Typed",
 ]
-dependencies = []
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn>=0.30",
+]
 
 [project.urls]
 Homepage = "https://mohamedtaqysalmi.github.io/webhook-inbox/"
@@ -35,6 +38,7 @@ dev = [
     "pytest-cov",
     "pre-commit",
     "build",
+    "httpx",
 ]
 
 [tool.hatch.build.targets.wheel]
