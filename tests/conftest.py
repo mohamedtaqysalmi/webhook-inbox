@@ -45,6 +45,10 @@ def settings(db_path: str) -> Settings:
         max_body_bytes=1000,
         max_header_bytes=400,
         base_url="http://inbox.test",
+        rate_limit_per_minute=0,
+        retention_days=0,
+        replay_timeout_seconds=2.0,
+        allow_private_replay_targets=False,
     )
 
 

@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Inbox {{ token }} · webhook-inbox{% endblock %}
+{% block content %}
+<section class="panel">
+  <h1>Endpoint inbox</h1>
+  <p class="muted">POST webhooks to this URL:</p>
+  <pre id="hook-url">{{ hook_url }}</pre>
+  <p class="muted">Token (keep private): <code>{{ token }}</code></p>
+</section>
+
+<section class="panel">
+  <form class="row cols-3"
+        hx-get="/ui/{{ token }}/requests"
+        hx-target="#request-list"
+        hx-trigger="submit, load, every 5s"
+        id="filter-form">
+    <div>
+      <label for="method">Method</label>
+      <select id="method" name="method">
+        <option value="">Any</option>
+        {% for m in ["GET","POST","PUT","PATCH","DELETE","OPTIONS","HEAD"] %}
+        <option value="{{ m }}">{{ m }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label for="q">Body contains</label>
+      <input id="q" name="q" placeholder="invoice.paid">
+    </div>
+    <div>
+      <label for="limit">Limit</label>
+      <input id="limit" name="limit" type="number" min="1" max="200" value="50">
+    </div>
+    <div>
+      <button type="submit" class="secondary">Filter</button>
+    </div>
+  </form>
+</section>
+
+<div class="layout">
+  <section class="panel">
+    <h2>Requests</h2>
+    <div id="request-list"><p class="muted">Loading…</p></div>
+  </section>
+  <section class="panel">
+    <h2>Detail</h2>
+    <div id="request-detail"><p class="muted">Select a request.</p></div>
+  </section>
+</div>
+{% endblock %}

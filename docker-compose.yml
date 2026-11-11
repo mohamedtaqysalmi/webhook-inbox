@@ -1,0 +1,17 @@
+services:
+  webhook-inbox:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      WEBHOOK_INBOX_BASE_URL: http://localhost:8000
+      WEBHOOK_INBOX_DB_PATH: /data/webhook_inbox.db
+      WEBHOOK_INBOX_RATE_LIMIT_PER_MINUTE: "120"
+      WEBHOOK_INBOX_RETENTION_DAYS: "7"
+      WEBHOOK_INBOX_ALLOW_PRIVATE_REPLAY_TARGETS: "false"
+    volumes:
+      - inbox-data:/data
+    restart: unless-stopped
+
+volumes:
+  inbox-data:

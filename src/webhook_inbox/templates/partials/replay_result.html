@@ -1,0 +1,6 @@
+{% if replay.error %}
+<div class="error mono">{{ replay.error }}</div>
+{% else %}
+<div class="ok mono">HTTP {{ replay.status_code }} in {{ replay.duration_ms }} ms</div>
+<pre>{{ replay.response_body_preview }}</pre>
+{% endif %}
