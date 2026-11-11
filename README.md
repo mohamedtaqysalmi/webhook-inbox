@@ -41,6 +41,26 @@ curl -X POST localhost:8000/h/<token> -d '{"hello":"world"}'
 curl localhost:8000/api/endpoints/<token>/requests
 ```
 
+### Replay a request
+
+Use the endpoint token and request ID from the inbox. Replace the example target with a public
+HTTP(S) URL you control; private and loopback targets are blocked by default (see
+[Security notes](#security-notes)).
+
+```bash
+BASE_URL="http://localhost:8000"
+TOKEN="<endpoint-token>"
+REQUEST_ID="<request-id>"
+
+curl -i -X POST "$BASE_URL/api/endpoints/$TOKEN/requests/$REQUEST_ID/replay" \
+  -H 'Content-Type: application/json' \
+  -d '{"url":"https://your-public-test-endpoint.example/webhook"}'
+
+curl "$BASE_URL/api/endpoints/$TOKEN/requests/$REQUEST_ID/replays"
+```
+
+The POST returns and records the replay result. The GET returns previous results in an `items` array.
+
 Configuration is environment variables validated at startup (see `.env.example`).
 
 ## Security notes
