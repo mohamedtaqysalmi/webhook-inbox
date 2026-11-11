@@ -47,9 +47,6 @@ dev = [
 [tool.hatch.build.targets.wheel]
 packages = ["src/webhook_inbox"]
 
-[tool.hatch.build.targets.wheel.force-include]
-"src/webhook_inbox/templates" = "webhook_inbox/templates"
-
 [tool.ruff]
 line-length = 100
 src = ["src", "tests"]
