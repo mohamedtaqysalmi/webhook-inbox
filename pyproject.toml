@@ -1,0 +1,66 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "webhook-inbox"
+version = "0.0.1"
+description = "Self-hosted inbox to receive, store, inspect and replay webhooks. FastAPI and SQLite."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Mohamed-Taqy Salmi" }]
+classifiers = [
+    "Development Status :: 1 - Planning",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Typing :: Typed",
+]
+dependencies = []
+
+[project.urls]
+Homepage = "https://mohamedtaqysalmi.github.io/webhook-inbox/"
+Repository = "https://github.com/mohamedtaqysalmi/webhook-inbox"
+Changelog = "https://github.com/mohamedtaqysalmi/webhook-inbox/blob/main/CHANGELOG.md"
+
+[project.optional-dependencies]
+dev = [
+    "ruff",
+    "mypy",
+    "pytest",
+    "pytest-cov",
+    "pre-commit",
+    "build",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/webhook_inbox"]
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "C4", "PT", "RUF"]
+
+[tool.mypy]
+strict = true
+python_version = "3.11"
+files = ["src", "tests"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--cov=webhook_inbox --cov-report=term-missing"
+
+[tool.coverage.run]
+branch = true
+source = ["webhook_inbox"]
+
+[tool.coverage.report]
+fail_under = 85
+show_missing = true
