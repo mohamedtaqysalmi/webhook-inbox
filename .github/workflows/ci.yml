@@ -34,5 +34,5 @@ jobs:
       - run: mypy
       - run: pytest --cov-report=xml
       - name: Site calculator matches Python vectors
-        run: node --test tests/js
+        run: node --test "tests/js/*.test.mjs"
       - run: python -m build

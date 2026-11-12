@@ -1,4 +1,4 @@
-// Run with: node --test tests/js
+// Run with: node --test "tests/js/*.test.mjs"
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
