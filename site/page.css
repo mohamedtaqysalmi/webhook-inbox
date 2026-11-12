@@ -1,0 +1,28 @@
+/* webhook-inbox: calculator-only layout rules. Everything else is base.css. */
+
+.field + .field {
+  margin-top: 0.75rem;
+}
+
+.samples-label {
+  margin-top: 1rem;
+}
+
+.result {
+  min-height: 3rem;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  font-family: var(--mono);
+  overflow-wrap: anywhere;
+}
+
+.shot {
+  border: 1px solid var(--line-soft);
+}
+.shot figcaption {
+  padding: 0.4rem 0.6rem;
+  border-top: 1px solid var(--line-soft);
+  font-size: var(--step--1);
+  color: var(--muted);
+}
