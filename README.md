@@ -39,6 +39,10 @@ Then open `http://localhost:8000` or:
 curl -X POST localhost:8000/api/endpoints
 curl -X POST localhost:8000/h/<token> -d '{"hello":"world"}'
 curl localhost:8000/api/endpoints/<token>/requests
+# Replay a stored request to an external URL:
+curl -X POST localhost:8000/api/endpoints/<token>/requests/<request_id>/replay \
+  -H 'Content-Type: application/json' \
+  -d '{"url":"https://example.com/webhook"}'
 ```
 
 Configuration is environment variables validated at startup (see `.env.example`).
