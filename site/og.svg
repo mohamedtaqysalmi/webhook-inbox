@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" role="img" aria-label="webhook-inbox">
+  <rect width="1200" height="630" fill="#131210"/>
+  <rect x="80" y="96" width="64" height="8" fill="#5fcbd6"/>
+  <text x="80" y="280" font-family="Segoe UI, Arial, sans-serif" font-size="84" font-weight="700" fill="#ece9e2">webhook-inbox</text>
+  <text x="80" y="360" font-family="Segoe UI, Arial, sans-serif" font-size="36" fill="#5fcbd6">Receive, inspect and replay webhooks</text>
+  <text x="80" y="520" font-family="Segoe UI, Arial, sans-serif" font-size="28" fill="#a8a399">mohamedtaqysalmi.github.io/webhook-inbox</text>
+</svg>

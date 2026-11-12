@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>webhook-inbox: catch, inspect and replay webhooks</title>
+    <meta
+      name="description"
+      content="Self-hosted inbox that stores incoming webhooks, shows headers and bodies, and replays them to a checked target. FastAPI and SQLite, with a signature calculator that runs in your browser."
+    />
+    <meta property="og:title" content="webhook-inbox" />
+    <meta
+      property="og:description"
+      content="Self-hosted inbox to receive, store, inspect and replay webhooks."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://mohamedtaqysalmi.github.io/webhook-inbox/" />
+    <meta property="og:image" content="https://mohamedtaqysalmi.github.io/webhook-inbox/og.svg" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="webhook-inbox" />
+    <meta
+      name="twitter:description"
+      content="Self-hosted inbox to receive, store, inspect and replay webhooks."
+    />
+    <meta name="twitter:image" content="https://mohamedtaqysalmi.github.io/webhook-inbox/og.svg" />
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="base.css" />
+    <link rel="stylesheet" href="page.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#demo">Skip to the signature calculator</a>
+
+    <header class="wrap site-header">
+      <a class="brand" href="./">
+        <img src="favicon.svg" alt="" width="28" height="28" />
+        webhook-inbox
+      </a>
+      <nav class="site-nav" aria-label="Primary">
+        <a href="#demo">Calculator</a>
+        <a href="#quickstart">Quickstart</a>
+        <a href="#formats">Signature formats</a>
+        <a href="https://github.com/mohamedtaqysalmi/webhook-inbox">GitHub</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="wrap hero">
+        <p class="eyebrow">FastAPI · SQLite · HTMX</p>
+        <h1>Catch webhooks, read them properly, and replay them to a target you chose.</h1>
+        <p class="lede">
+          Provider dashboards often hide the raw request, and tunnels disappear when you close the
+          laptop. I built a small inbox you host yourself: it stores every request, shows headers
+          and body, and replays a stored request after checking where it is going.
+        </p>
+        <div class="actions">
+          <a class="btn btn-primary" href="#demo">Try the signature calculator</a>
+          <a class="btn" href="https://github.com/mohamedtaqysalmi/webhook-inbox">View the code</a>
+        </div>
+        <dl class="facts">
+          <div>
+            <dt>version</dt>
+            <dd>0.1.0</dd>
+          </div>
+          <div>
+            <dt>python</dt>
+            <dd>3.11 to 3.14</dd>
+          </div>
+          <div>
+            <dt>calculator vs python</dt>
+            <dd id="fact-vectors">checking</dd>
+          </div>
+          <div>
+            <dt>license</dt>
+            <dd>MIT</dd>
+          </div>
+        </dl>
+      </section>
+
+      <section class="wrap section" id="demo" aria-labelledby="demo-title">
+        <div class="section-head">
+          <h2 id="demo-title">Signature calculator</h2>
+        </div>
+        <div class="section-body flow">
+          <p>
+            Compute the signature a provider would send for a body and a secret. It runs in this
+            tab with Web Crypto and sends nothing anywhere. The Python helpers in
+            <code>webhook_inbox.signatures</code> accept the same strings, and the vectors below
+            are checked against them in the test suite.
+          </p>
+          <form id="calc-form" class="grid-2" autocomplete="off">
+            <div class="panel">
+              <div class="field">
+                <label for="mode">Scheme</label>
+                <select id="mode">
+                  <option value="github">GitHub (X-Hub-Signature-256)</option>
+                  <option value="stripe">Stripe-style (t=, v1=)</option>
+                  <option value="hmac-hex">Generic HMAC, hex</option>
+                  <option value="hmac-base64">Generic HMAC, base64</option>
+                </select>
+              </div>
+              <div class="field" id="algo-field" hidden>
+                <label for="algorithm">Hash</label>
+                <select id="algorithm">
+                  <option value="sha256">SHA-256</option>
+                  <option value="sha384">SHA-384</option>
+                  <option value="sha512">SHA-512</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="secret">Secret (use test values)</label>
+                <input id="secret" type="text" value="shared-secret" spellcheck="false" autocomplete="off" />
+              </div>
+              <div class="field" id="ts-field" hidden>
+                <label for="timestamp">Timestamp, unix seconds (empty means now)</label>
+                <input id="timestamp" type="text" inputmode="numeric" spellcheck="false" />
+              </div>
+              <div class="field">
+                <label for="body">Raw body, exactly as received</label>
+                <textarea id="body" spellcheck="false">{"hello":"world"}</textarea>
+              </div>
+            </div>
+            <div class="panel">
+              <p class="label" id="header-name">X-Hub-Signature-256</p>
+              <p class="result" id="result" aria-labelledby="header-name" aria-live="polite">
+                Enter a secret to see the signature.
+              </p>
+              <p class="hint" id="calc-meta"></p>
+              <p class="label samples-label" id="samples-label">Load a test vector</p>
+              <div class="chips" id="samples" role="group" aria-labelledby="samples-label"></div>
+            </div>
+          </form>
+          <noscript><p class="callout">The calculator needs JavaScript. The rest of the page does not.</p></noscript>
+          <h3>Vectors checked against Python</h3>
+          <p>
+            Each vector was computed with Python's <code>hmac</code> module and is stored in
+            <a href="signature-vectors.json">signature-vectors.json</a>. This list is computed live
+            by the code above.
+          </p>
+          <ul class="status" id="vector-list">
+            <li>
+              <span class="tag tag-partial">pending</span>
+              <span>Loading the vector file</span>
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="wrap section" aria-labelledby="status-title">
+        <div class="section-head">
+          <h2 id="status-title">What works</h2>
+        </div>
+        <div class="section-body flow">
+          <ul class="status">
+            <li>
+              <span class="tag tag-ok">works</span>
+              <span>Create an endpoint and receive any HTTP method on <code>/h/{token}</code>; method, path, query, headers, body, time and source IP are stored in SQLite</span>
+            </li>
+            <li>
+              <span class="tag tag-ok">works</span>
+              <span>List and filter stored requests by method, date range and body text, through the JSON API or the HTMX UI</span>
+            </li>
+            <li>
+              <span class="tag tag-ok">works</span>
+              <span>Body size limit enforced while streaming (413), cap on stored header bytes, per-IP rate limit, retention</span>
+            </li>
+            <li>
+              <span class="tag tag-ok">works</span>
+              <span>Replay a stored request to a URL, with the target checked first and the result logged</span>
+            </li>
+            <li>
+              <span class="tag tag-ok">works</span>
+              <span>Signature helpers for GitHub, Stripe-style and generic HMAC, as a Python library</span>
+            </li>
+            <li>
+              <span class="tag tag-partial">partial</span>
+              <span>Replay SSRF checks resolve DNS and block private ranges, but the checked address is not pinned on the connection, so DNS rebinding is a residual risk</span>
+            </li>
+            <li>
+              <span class="tag tag-no">not done</span>
+              <span>The app does not verify signatures on incoming requests yet; the helpers are not wired to endpoints</span>
+            </li>
+            <li>
+              <span class="tag tag-no">not done</span>
+              <span>Auth for creating endpoints, Postgres storage, and a rate limit shared between workers</span>
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="wrap section" id="quickstart" aria-labelledby="quick-title">
+        <div class="section-head">
+          <h2 id="quick-title">Quickstart</h2>
+        </div>
+        <div class="section-body flow">
+          <div class="code">
+            <pre id="quickstart-code"><code>git clone https://github.com/mohamedtaqysalmi/webhook-inbox
+cd webhook-inbox
+docker compose up --build
+# in another terminal
+curl -X POST localhost:8000/api/endpoints
+curl -X POST localhost:8000/h/TOKEN -d '{"hello":"world"}'
+curl localhost:8000/api/endpoints/TOKEN/requests</code></pre>
+            <button class="btn btn-small copy" type="button" data-copy="quickstart-code">Copy</button>
+          </div>
+          <p>
+            Replace <code>TOKEN</code> with the token returned by the first request. The UI is at
+            <code>http://localhost:8000</code>. Without Docker:
+            <code>pip install -e .</code> then
+            <code>uvicorn --factory webhook_inbox.app:create_app</code>.
+          </p>
+          <div class="badges">
+            <a href="https://github.com/mohamedtaqysalmi/webhook-inbox/actions/workflows/ci.yml"
+              ><img
+                alt="CI status"
+                width="110"
+                height="20"
+                src="https://github.com/mohamedtaqysalmi/webhook-inbox/actions/workflows/ci.yml/badge.svg"
+            /></a>
+            <a href="https://github.com/mohamedtaqysalmi/webhook-inbox/actions/workflows/codeql.yml"
+              ><img
+                alt="CodeQL status"
+                width="130"
+                height="20"
+                src="https://github.com/mohamedtaqysalmi/webhook-inbox/actions/workflows/codeql.yml/badge.svg"
+            /></a>
+          </div>
+        </div>
+      </section>
+
+      <section class="wrap section" aria-labelledby="ui-title">
+        <div class="section-head">
+          <h2 id="ui-title">The inbox UI</h2>
+        </div>
+        <div class="section-body flow">
+          <p>
+            A screenshot of a local run with four test requests sent by hand. Filters and the
+            request list are server-rendered HTMX partials; selecting a row loads its headers and
+            body into the detail pane, where the replay form lives.
+          </p>
+          <figure class="shot">
+            <img
+              src="ui-inbox.png"
+              width="1100"
+              height="780"
+              alt="The inbox page for one endpoint: the endpoint URL, filter fields for method, body text and limit, and a table of four received requests with time, method, path and size."
+            />
+            <figcaption>Inbox view at /ui/{token}, run locally with Docker-free uvicorn.</figcaption>
+          </figure>
+        </div>
+      </section>
+      <section class="wrap section" aria-labelledby="how-title">
+        <div class="section-head">
+          <h2 id="how-title">How it works</h2>
+        </div>
+        <div class="section-body flow">
+          <p>
+            A request to an endpoint URL is read with a byte limit, stored, and shown in the
+            inbox. Replay goes through a target check before any outbound request is made.
+          </p>
+          <pre class="diagram" role="img" aria-label="Flow: a webhook arrives at the receive route, passes the rate limit and body limit, is stored in SQLite, listed in the API and UI, and can be replayed after a target check.">provider ──► /h/{token}
+                │
+                ├─ rate limit per IP
+                ├─ read body, stop at the size limit (413)
+                ├─ cap header bytes
+                ▼
+             SQLite ──► JSON API and HTMX UI (list, filter, inspect)
+                │
+                └─ replay ──► resolve host, block private ranges
+                                │
+                                ▼
+                         outbound request, result logged</pre>
+        </div>
+      </section>
+
+      <section class="wrap section" id="formats" aria-labelledby="formats-title">
+        <div class="section-head">
+          <h2 id="formats-title">Signature formats</h2>
+        </div>
+        <div class="section-body flow">
+          <p>
+            What the three helpers verify. All of them compare with a constant-time function and
+            raise an error with a reason such as missing, malformed, mismatch or expired.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Scheme</th>
+                  <th scope="col">Header value</th>
+                  <th scope="col">Signed bytes</th>
+                  <th scope="col">Extra check</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>verify_github</code></td>
+                  <td><code>sha256=&lt;hex&gt;</code></td>
+                  <td>raw body</td>
+                  <td>none</td>
+                </tr>
+                <tr>
+                  <td><code>verify_stripe</code></td>
+                  <td><code>t=&lt;unix&gt;,v1=&lt;hex&gt;</code></td>
+                  <td><code>&lt;t&gt;.</code> then raw body</td>
+                  <td>timestamp within 300 s by default; any <code>v1</code> may match</td>
+                </tr>
+                <tr>
+                  <td><code>verify_hmac</code></td>
+                  <td>hex or base64, optional prefix</td>
+                  <td>raw body</td>
+                  <td>choice of hash</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="wrap section" aria-labelledby="built-title">
+        <div class="section-head">
+          <h2 id="built-title">How I built it</h2>
+        </div>
+        <div class="section-body">
+          <div class="notes">
+            <article>
+              <h3>Standard-library SQLite, no ORM</h3>
+              <p>
+                There are two tables and a handful of queries. An ORM would add a dependency and a
+                layer without removing any code. Each call opens a short connection, so nothing is
+                shared between worker threads.
+              </p>
+            </article>
+            <article>
+              <h3>HTMX for the UI</h3>
+              <p>
+                The inbox is state the server owns, so I render partials on the server instead of
+                building a separate front end. The reasoning is in
+                <a href="https://github.com/mohamedtaqysalmi/webhook-inbox/blob/main/docs/adr/0001-htmx-ui.md">ADR 0001</a>.
+              </p>
+            </article>
+            <article>
+              <h3>Replay checks resolve DNS</h3>
+              <p>
+                Checking only the URL text misses hostnames that point at private addresses, so the
+                check looks at every address the name resolves to. Private targets are off unless
+                you enable them for a local demo.
+              </p>
+            </article>
+            <article>
+              <h3>Signature helpers are a library first</h3>
+              <p>
+                Providers disagree on header names and signed bytes. I kept the verification
+                functions separate and tested them against vectors computed independently, then
+                built this calculator on the same vectors so the page cannot drift from them.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="wrap section" aria-labelledby="limits-title">
+        <div class="section-head">
+          <h2 id="limits-title">Limits and roadmap</h2>
+        </div>
+        <div class="section-body flow">
+          <ul>
+            <li>The endpoint token is the only access control for reading requests. Put authentication in front of anything shared.</li>
+            <li>The rate limiter lives in process memory, so it does not coordinate across workers.</li>
+            <li>The source IP is the direct peer address. <code>X-Forwarded-For</code> is not trusted.</li>
+            <li>There is no recorded demo yet. Run it with Docker to see the UI.</li>
+          </ul>
+          <p>
+            Planned work is tracked in the
+            <a href="https://github.com/mohamedtaqysalmi/webhook-inbox/issues">open issues</a>. To
+            contribute, start with
+            <a href="https://github.com/mohamedtaqysalmi/webhook-inbox/blob/main/CONTRIBUTING.md">CONTRIBUTING.md</a>.
+          </p>
+        </div>
+      </section>
+    </main>
+
+    <footer class="wrap site-footer">
+      <p>
+        Built by <a href="https://github.com/mohamedtaqysalmi">Mohamed-Taqy Salmi</a> ·
+        <a href="https://www.linkedin.com/in/mohamedtaqysalmi">LinkedIn</a>
+      </p>
+      <p>
+        MIT licensed · <a href="https://github.com/mohamedtaqysalmi/webhook-inbox">Source on GitHub</a>
+      </p>
+    </footer>
+
+    <script src="base.js" defer></script>
+    <script src="signature.js" defer></script>
+    <script src="app.js" defer></script>
+  </body>
+</html>

@@ -1,0 +1,54 @@
+{
+  "description": "Shared test vectors, computed with Python hmac. Checked by tests/test_signature_vectors.py, tests/js/signature-vectors.test.mjs and live on the site page.",
+  "cases": [
+    {
+      "name": "GitHub documentation example",
+      "mode": "github",
+      "algorithm": "sha256",
+      "secret": "It's a Secret to Everybody",
+      "body": "Hello, World!",
+      "expected": "sha256=757107ea0eb2509fc211221cce984b8a37570b6d7586c22c46f4379c8b043e17"
+    },
+    {
+      "name": "GitHub with non-ASCII body",
+      "mode": "github",
+      "algorithm": "sha256",
+      "secret": "s3cret",
+      "body": "{\"name\":\"Zoë\",\"note\":\"héllo ✓\"}",
+      "expected": "sha256=9e63da7d391799718c861378eb27be0b73a151166623d8ad3f5f0f303bab2f88"
+    },
+    {
+      "name": "Stripe-style header",
+      "mode": "stripe",
+      "algorithm": "sha256",
+      "secret": "whsec_test_secret",
+      "body": "{\"id\":\"evt_1\",\"amount\":1200}",
+      "timestamp": "1772366400",
+      "expected": "t=1772366400,v1=925d4e7445dad3a4a702102ae778ae1c1c5b61c64be9779b07fddb27f6f94a2a"
+    },
+    {
+      "name": "Generic HMAC SHA-256, hex",
+      "mode": "hmac-hex",
+      "algorithm": "sha256",
+      "secret": "shared-secret",
+      "body": "{\"hello\":\"world\"}",
+      "expected": "c30d91e570e2cf6cb65a6d2c560b1f0c505b2159cc88b161382f03566f3fe858"
+    },
+    {
+      "name": "Generic HMAC SHA-512, base64",
+      "mode": "hmac-base64",
+      "algorithm": "sha512",
+      "secret": "shared-secret",
+      "body": "{\"hello\":\"world\"}",
+      "expected": "l2tNqMzlpk3xS/0elu3l6YM3mYuzTWvgBzZsInF8WgIGVLMsh4k23xFtBmkflUM0NL3GqN75PHUTYZPCG5N19A=="
+    },
+    {
+      "name": "Empty body",
+      "mode": "hmac-hex",
+      "algorithm": "sha256",
+      "secret": "k",
+      "body": "",
+      "expected": "8bb990c40a7d61cb97597a942125025be50ac8beb74436e3735b98893a7f6620"
+    }
+  ]
+}
